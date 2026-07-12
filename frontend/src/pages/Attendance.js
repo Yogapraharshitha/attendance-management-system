@@ -79,20 +79,43 @@ export default function Attendance() {
     }
   };
 
-  const handleExport = () => {
-    const url = attendanceApi.exportCsvUrl({
-      employee_id: employeeFilter || undefined,
-      date_from: dateFrom || undefined,
-      date_to: dateTo || undefined,
-    });
+ const handleExport = () => {
+    const params = {};
+
+    if (employeeFilter) {
+      params.employee_id = employeeFilter;
+    }
+
+    if (dateFrom) {
+      params.date_from = dateFrom;
+    }
+
+    if (dateTo) {
+      params.date_to = dateTo;
+    }
+
+    const url = attendanceApi.exportCsvUrl(params);
+
     const token = localStorage.getItem("access_token");
-    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => res.blob())
+
+    fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Export failed");
+        }
+        return res.blob();
+      })
       .then((blob) => {
         const link = document.createElement("a");
         link.href = window.URL.createObjectURL(blob);
         link.download = "attendance_report.csv";
         link.click();
+      })
+      .catch((err) => {
+        console.error(err);
+        alert("Failed to export CSV");
       });
   };
 
